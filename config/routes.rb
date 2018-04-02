@@ -3,7 +3,10 @@ Rails.application.routes.draw do
 
   devise_for :users
 
+  resources :rooms do
+    resources :bookings, only: [:create, :index, :show]
+  end
 
-  resources :rooms, except: [:destroy]
   resources :profiles, only: [:new, :edit, :create, :update]
+  resources :photos, only: [:destroy]
 end

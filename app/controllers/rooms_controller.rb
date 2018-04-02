@@ -1,13 +1,16 @@
 class RoomsController < ApplicationController
   before_action :set_room, only: [:show, :edit, :update]
-  before_action :authenticate_user!, except: [:show]
+  before_action :authenticate_user!, except: [:show, :index]
 
   def index
+    # @rooms = Room.all
     @rooms = current_user.rooms
+    @booked_rooms = current_user.booked_rooms
   end
 
   def show
     @themes = @room.themes
+    @photos = @room.photos
   end
 
   def new
@@ -18,21 +21,35 @@ class RoomsController < ApplicationController
     @room = current_user.rooms.build(room_params)
 
     if @room.save
-      redirect_to @room, notice: "Room created"
+      image_params.each do |image|
+        @room.photos.create(image: image)
+    end
+
+    redirect_to edit_room_path(@room), notice: "Room successfully created"
     else
       render :new
     end
   end
 
-  def edit; end
-
-  def update
-    if @room.update(room_params)
-      redirect_to @room, notice: "Room updated"
-    else
-      render :edit
-    end
+  def edit
+  if current_user.id == @room.user.id
+    @photos = @room.photos
+  else
+    redirect_to root_path, notice: "You don't have permission."
   end
+end
+
+def update
+  if @room.update(room_params)
+    image_params.each do |image|
+      @room.photos.create(image: image)
+    end
+
+    redirect_to edit_room_path(@room), notice: "Room successfully updated"
+  else
+    render :edit
+  end
+end
 
   private
 
@@ -48,5 +65,9 @@ class RoomsController < ApplicationController
         :description, :address, :has_tv, :has_kitchen, :has_airco, :has_heating, :has_internet,
         :price, :active, :user_id, theme_ids: []
       )
+  end
+
+  def image_params
+    params[:images].present? ? params.require(:images) : []
   end
 end
